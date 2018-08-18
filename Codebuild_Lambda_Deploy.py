@@ -6,15 +6,22 @@ import mimetypes
 def lambda_handler(event, context):
     # set AWS_PROFILE=aws_personal
     s3=boto3.resource('s3')
-    codebuild_buccket = s3.Bucket('portfolio.codebuild.pipeline')
-    portfolio_bucket = s3.Bucket('agni-portfolio')
-    portfolio_zip = io.BytesIO()
-    codebuild_file=codebuild_buccket.download_fileobj('portfoliobuild.zip', portfolio_zip)
-    with zipfile.ZipFile(portfolio_zip) as myzip:
-        for name in myzip.namelist():
-            obj = myzip.open(name)
-            portfolio_bucket.upload_fileobj(obj,name,
-            ExtraArgs={'ContentType': mimetypes.guess_type(name)[0]})
-            portfolio_bucket.Object(name).Acl().put(ACL='public-read')
+    sns = boto3.resource('sns')
+    topic = sns.Topic('arn:aws:sns:ap-southeast-2:586861109696:PortfolioDeployCompleted')
+    try:
+        codebuild_buccket = s3.Bucket('portfolio.codebuild.pipeline')
+        portfolio_bucket = s3.Bucket('agni-portfolio')
+        portfolio_zip = io.BytesIO()
+        codebuild_file=codebuild_buccket.download_fileobj('portfoliobuild.zip', portfolio_zip)
+        with zipfile.ZipFile(portfolio_zip) as myzip:
+            for name in myzip.namelist():
+                obj = myzip.open(name)
+                portfolio_bucket.upload_fileobj(obj,name,
+                ExtraArgs={'ContentType': mimetypes.guess_type(name)[0]})
+                portfolio_bucket.Object(name).Acl().put(ACL='public-read')
+        topic.publish(Subject='Portfolio deployed successfully',Message='Congratulation !!! Lambda has successfully deployed the portfolio to s3')
+    except:
+        topic.publish(Subject='Code deploy failed', Message='Code deployment to S3 via Lambda failed')
+        raise;
 
     return 'Hello from Lambda'
