@@ -34,7 +34,7 @@ def lambda_handler(event, context):
         if job:
             print('Codepipeline ran successfully')
             code_pipeline = boto3.client('codepipeline')
-            codepipeline.put_job_success_result(jobId=job['Id'])
+            code_pipeline.put_job_success_result(jobId=job['Id'])
     except:
         topic.publish(Subject='Code deploy failed', Message='Code deployment to S3 via Lambda failed')
         raise;
