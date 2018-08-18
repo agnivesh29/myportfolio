@@ -32,6 +32,7 @@ def lambda_handler(event, context):
                 portfolio_bucket.Object(name).Acl().put(ACL='public-read')
         topic.publish(Subject='Portfolio deployed successfully',Message='Congratulation !!! Lambda has successfully deployed the portfolio to s3')
         if job:
+            print('Codepipeline ran successfully')
             code_pipeline = boto3.client('codepipeline')
             codepipeline.put_job_success_result(jobId=job['Id'])
     except:
